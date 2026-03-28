@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Chatbot</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+}
+.header {
+    padding: 15px;
+    text-align: center;
+    font-size: 22px;
+    background: #1e293b;
+}
+.chat {
+    height: 70vh;
+    overflow-y: auto;
+    padding: 10px;
+}
+.msg {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 10px;
+    max-width: 70%;
+}
+.user {
+    background: #22c55e;
+    margin-left: auto;
+}
+.bot {
+    background: #334155;
+}
+.input-box {
+    display: flex;
+    padding: 10px;
+    background: #1e293b;
+}
+input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+}
+button {
+    margin-left: 5px;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🤖 AI Chatbot</div>
+
+<div id="chat" class="chat"></div>
+
+<div class="input-box">
+    <input id="msg" placeholder="Type message...">
+    <button onclick="send()">Send</button>
+</div>
+
+<script>
+const API_KEY = "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"; //
+function addMessage(text, type){
+    let chat = document.getElementById("chat");
+    let div = document.createElement("div");
+    div.className = "msg " + type;
+    div.innerText = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function fallbackReply(msg){
+    msg = msg.toLowerCase();
+
+    if(msg.includes("hi") || msg.includes("hello"))
+        return "Hello 👋";
+
+    if(msg.includes("name"))
+        return "Mera naam AI Bot hai 🤖";
+
+    if(msg.includes("bye"))
+        return "Bye 👋";
+
+    return "Network issue hai 😅 thodi der baad try karo";
+}
+
+async function send(){
+    let input = document.getElementById("msg");
+    let text = input.value.trim();
+
+    if(!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+
+    addMessage("Typing...", "bot");
+
+    try{
+        let res = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + API_KEY
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                    { role: "system", content: "You are a helpful chatbot." },
+                    { role: "user", content: text }
+                ]
+            })
+        });
+
+        let data = await res.json();
+
+        document.querySelector(".bot:last-child").remove();
+
+        if(data.error){
+            addMessage("❌ " + data.error.message, "bot");
+            return;
+        }
+
+        if(!data.choices){
+            addMessage(fallbackReply(text), "bot");
+            return;
+        }
+
+        let reply = data.choices[0].message.content;
+        addMessage(reply, "bot");
+
+    }catch(e){
+        document.querySelector(".bot:last-child").remove();
+        addMessage(fallbackReply(text), "bot");
+    }
+}
+</script>
+
+</body>
+</html>
